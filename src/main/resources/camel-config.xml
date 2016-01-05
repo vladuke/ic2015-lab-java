@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camel="http://camel.apache.org/schema/spring"
+    xsi:schemaLocation="
+         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+  <bean id="calcService" class="com.vlad.labs.calculation.CalculationService" />
+
+  <bean id="mongoBean" class="com.mongodb.Mongo">
+    <constructor-arg name="host" value="127.0.0.1" />
+    <constructor-arg name="port" value="27017" />
+  </bean>
+
+  <camelContext id="myCamel" xmlns="http://camel.apache.org/schema/spring">
+
+    <dataFormats>
+      <json id="gson" library="Gson" />
+    </dataFormats>
+    <restConfiguration component="servlet" bindingMode="json" />
+
+    <rest path="/premium" consumes="application/json" produces="application/json">
+      <post type="com.vlad.labs.calculation.Plan">
+        <param name="body" type="body" />
+        <to uri="direct:calculate" />
+      </post>
+    </rest>
+
+    <camel:route>
+      <camel:from uri="direct:calculate" />
+      <log message="received ${body}" loggingLevel="TRACE"/>
+      <wireTap uri="direct:calcPremium" />
+      <setBody>
+        <constant>{"msg": "request accepted""}</constant>
+      </setBody>
+    </camel:route>
+
+    <route>
+      <from uri="direct:calcPremium" />
+      <to uri="bean:calcService?method=calcPremiums" />
+      <to uri="direct:savePremium" />
+    </route>
+
+    <route>
+      <from uri="direct:savePremium" />
+      <camel:split>
+        <simple>${body}</simple>
+        <log message="${body}" loggingLevel="ERROR"/>
+        <to uri="mongodb:mongoBean?database=quoteme&amp;collection=Premium&amp;operation=save" />
+      </camel:split>
+    </route>
+
+  </camelContext>
+
+</beans>
