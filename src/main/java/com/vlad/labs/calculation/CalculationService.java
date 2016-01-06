@@ -10,14 +10,16 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 public class CalculationService {
-
     
-    public List<DBObject> calcPremiums(@Body Plan plan) {
+    public List<DBObject> calcPremiums(@Body Plan plan) throws InterruptedException {
         System.out.println("CalculationService.calcPremiums()");
         System.out.println(plan);
+        Thread.sleep(10000);
         List<DBObject> converted = new ArrayList<>();
+        
+        double basePremium = (plan.getCopay() * 9.0) + (plan.getDeductible() / 12.0) + (plan.getCoinsurance() * 0.5);
         for(int idx = 1; idx < 4; idx++) {
-            Premium premium = new Premium(plan.getId(), "type" + idx, idx * 10.0);
+            Premium premium = new Premium(plan.getId(), "type" + idx, basePremium * idx);
             plan.getPremiums().add(premium);
             DBObject dbObj = new BasicDBObject();
             dbObj.put("planId", new ObjectId(premium.getPlanId()));
