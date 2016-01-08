@@ -28,7 +28,7 @@
                 <artifactId>maven-war-plugin</artifactId>
                 <version>2.6</version>
                 <configuration>
-                    <warName>ratingengine.war</warName>
+                    <warName>ratingengine</warName>
                 </configuration>
 			</plugin>
 			<plugin>
